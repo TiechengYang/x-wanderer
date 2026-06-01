@@ -1,0 +1,10 @@
+langchain
+langchain-openai
+langgraph
+pydantic
+pydantic-settings
+chromadb
+openai
+tweepy
+python-dotenv
+apscheduler
