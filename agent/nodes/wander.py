@@ -3,27 +3,22 @@ from platforms.x.tools import search_x
 from agent.memory.memory_manager import MemoryManager
 
 
-def wander_node(state: WandererState) -> dict:
+def wander_node(state: WandererState, llm=None) -> dict:
     """
-    漫游节点：支持主动回访重要画像
+    漫游节点（支持主动回访重要画像）
     """
     current_goal = state.get("current_goal", "")
     short_term = state.get("short_term_memory", [])
+    active_revisits = state.get("active_revisit_targets", [])
     memory_manager = MemoryManager()
 
-    # 检查是否有来自 Supervisor 的回访建议
-    revisit_suggestion = None
-    for item in reversed(short_term):
-        if item.get("type") == "suggested_revisit":
-            revisit_suggestion = item.get("content", "")
-            break
-
-    if revisit_suggestion:
-        # 主动回访模式：搜索该画像的近期内容
-        query = f"{revisit_suggestion} -is:retweet"
-        print(f"[Wander] 执行主动回访：{revisit_suggestion}")
+    # 优先处理主动回访目标
+    revisit_target = None
+    if active_revisits:
+        revisit_target = active_revisits[0]
+        query = f"from:{revisit_target} -is:retweet" if " " not in revisit_target else revisit_target
+        print(f"[Wander] 执行主动回访：{revisit_target}")
     else:
-        # 正常漫游
         query = f"{current_goal} lang:en OR lang:zh -is:retweet"
 
     results = search_x(query, max_results=7)
@@ -38,13 +33,19 @@ def wander_node(state: WandererState) -> dict:
 
     update = {
         "last_decision": "wander",
-        "decision_reason": f"进行了漫游{'（主动回访模式）' if revisit_suggestion else ''}，发现 {len(results)} 条内容。",
+        "decision_reason": f"进行了漫游{'（主动回访模式）' if revisit_target else ''}，发现 {len(results)} 条内容。",
         "short_term_memory": short_term[-18:],
         "x_current_focus": {
             "last_search_query": query,
             "results_count": len(results),
-            "revisit_mode": bool(revisit_suggestion)
+            "revisit_mode": bool(revisit_target)
         }
     }
+
+    # 如果完成了回访，从 active_revisit_targets 中移除
+    if revisit_target and active_revisits:
+        new_targets = [t for t in active_revisits if t != revisit_target]
+        update["active_revisit_targets"] = new_targets
+        memory_manager.record_profile_revisit("person" if "@" not in revisit_target else "person", revisit_target)
 
     return update

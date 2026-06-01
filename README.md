@@ -1,50 +1,26 @@
-# X Wanderer - 数字漫游者 Agent（当前保存状态）
+# X Wanderer - 数字漫游者 Agent（123 强化版）
 
-## 项目保存状态
+## 本轮优化完成（123）
 
-本项目已保存为 **v0.3.0-alpha（123 完整版）**，核心能力已较为完整。
+**1. 更主动的回访与关系维护**
+- Supervisor 会更积极地识别高价值画像并推动回访
+- Wander 和 Engage 节点支持“主动回访模式”
+- Agent 开始真正主动维护与重要对象的连接
 
-详细版本说明请查看：**VERSION.md**
+**2. 结构化重要关系总结**
+- Reflect 节点会系统性生成结构化的关系总结
+- 这些总结被单独存储为可检索的记忆类型
+- 大幅提升了长期认知的可用性和连贯性
 
----
+**3. 目标追踪与进度管理强化**
+- 新增 `goal_milestones`、`goal_progress_score`、`goal_status`
+- Supervisor 和 Reflect 都会主动评估目标完成度
+- 目标、画像、行动形成更紧密的反馈闭环
 
-## 一键操作（推荐）
+## 当前系统亮点
 
-### 一键安装环境
+- 真正具备长期记忆 + 主动关系维护能力
+- 开始有意识地规划和追踪长期目标
+- 支持完整干运行测试所有高级逻辑
 
-```bash
-bash setup.sh
-```
-
-### 一键发布到 GitHub（最推荐）
-
-```bash
-bash publish_to_github.sh
-```
-
-这个脚本会自动完成：
-- 生成干净的发布版本
-- 初始化 Git（如需要）
-- 使用 GitHub CLI 创建仓库
-- 直接推送代码
-- 可选创建 Release
-
-**前提条件**：需要先安装 GitHub CLI 并登录：
-```bash
-brew install gh
-gh auth login
-```
-
----
-
-## 其他常用命令
-
-- 完整性测试：`python3 test_integrity.py`
-- 干运行模式（无需 API Key）：`python3 main_dryrun.py`
-- 正式运行：`python3 main.py`
-
-使用手册请阅读：**使用手册.md**
-
----
-
-项目已进入相对成熟的迭代阶段。
+项目已进入较成熟的自主进化阶段。

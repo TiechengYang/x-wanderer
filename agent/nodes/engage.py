@@ -6,43 +6,26 @@ from agent.memory.memory_manager import MemoryManager
 
 def engage_node(state: WandererState, llm=None) -> dict:
     """
-    互动节点（主动回访 + 主动发起增强版）
+    互动节点（主动回访增强版）
     不仅被动回复，也会主动寻找重要画像进行互动
     """
     short_term = state.get("short_term_memory", [])
     current_goal = state.get("current_goal", "")
+    active_revisits = state.get("active_revisit_targets", [])
     memory_manager = MemoryManager()
 
     target = None
     revisit_mode = False
-    proactive_mode = False
 
-    # 1. 优先处理 Supervisor 建议的回访对象
-    for item in reversed(short_term):
-        if item.get("type") == "suggested_revisit":
-            content = item.get("content", "")
-            if "回访" in content:
-                name = content.split("：")[-1].strip() if "：" in content else None
-                if name:
-                    results = search_x(f"from:{name} -is:retweet", max_results=3)
-                    if results:
-                        target = results[0]
-                        revisit_mode = True
-                        break
+    # 1. 优先处理主动回访目标
+    if active_revisits:
+        target_name = active_revisits[0]
+        results = search_x(f"from:{target_name} -is:retweet", max_results=3)
+        if results:
+            target = results[0]
+            revisit_mode = True
 
-    # 2. 如果没有明确建议，主动寻找高重要性画像进行互动（新增主动能力）
-    if not target:
-        important_profiles = memory_manager.get_important_profiles(limit=5)
-        for profile in important_profiles:
-            if profile["type"] == "person" and profile["importance_score"] > 0.65:
-                # 搜索该重要人物的近期内容
-                results = search_x(f"from:{profile['name']} -is:retweet", max_results=2)
-                if results:
-                    target = results[0]
-                    proactive_mode = True
-                    break
-
-    # 3. 最后才退回到普通短期记忆中的内容
+    # 2. 如果没有回访目标，从短期记忆中找
     if not target:
         for item in reversed(short_term):
             if item.get("type") in ["observation", "wander_result"]:
@@ -54,7 +37,7 @@ def engage_node(state: WandererState, llm=None) -> dict:
     if not target:
         return {
             "last_decision": "engage",
-            "decision_reason": "未找到合适的互动对象（包括重要画像）。"
+            "decision_reason": "未找到合适的互动对象。"
         }
 
     target_text = target.get("content", "")[:450]
@@ -78,7 +61,7 @@ def engage_node(state: WandererState, llm=None) -> dict:
 关于 @{target_author} 的长期印象：
 {profile_text}
 
-{'【当前处于主动回访/关系维护模式】' if (revisit_mode or proactive_mode) else ''}
+{'【当前处于主动回访/关系维护模式】' if revisit_mode else ''}
 
 请生成一条自然、有深度、且与你当前漫游目标相关的回复。
 要求：
@@ -103,19 +86,17 @@ def engage_node(state: WandererState, llm=None) -> dict:
             username=target_author,
             summary=f"曾在 {datetime.now().strftime('%Y-%m-%d')} 进行过互动。",
             key_insights=[],
-            importance_boost=0.18 if (revisit_mode or proactive_mode) else 0.1
+            importance_boost=0.18 if revisit_mode else 0.1
         )
 
-    mode_tag = ""
-    if revisit_mode:
-        mode_tag = "（主动回访）"
-    elif proactive_mode:
-        mode_tag = "（主动关系维护）"
-
-    reason = f"已使用画像生成回复并发送给 @{target_author}{mode_tag}"
-
-    return {
+    # 如果是回访模式，移除该目标
+    update = {
         "last_decision": "engage",
-        "decision_reason": reason,
+        "decision_reason": f"已使用画像生成回复并发送给 @{target_author}" + ("（主动回访）" if revisit_mode else ""),
         "consecutive_actions": state.get("consecutive_actions", 0) + 1
     }
+
+    if revisit_mode and active_revisits:
+        update["active_revisit_targets"] = active_revisits[1:]
+
+    return update
