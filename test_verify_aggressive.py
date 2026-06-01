@@ -61,8 +61,6 @@ def main():
         "x_last_checked_id": None,
         "x_current_focus": {},
         "active_revisit_targets": [],
-        "current_revisit_campaign": None,
-        "revisit_campaign_history": [],
         "whitelist": [],
         "policies": {},
         "short_term_memory": [],
@@ -118,12 +116,11 @@ def main():
 
     print("\n=== 验证结论 ===")
     if state.get("active_revisit_targets"):
-        print("✅ 成功：analyze_people 注入高优先级 + supervisor 结构化铁律（pre-LLM early return）启动了 current_revisit_campaign 并强制多轮 engage。")
-        print(f"   战役状态: {state.get('current_revisit_campaign')}")
+        print("✅ 成功：analyze_people 注入高优先级 + supervisor 结构化铁律（pre-LLM early return）强制多轮 engage 战役。")
     else:
         print("⚠️ 整体流程已打通（队列可能被温和消耗）。")
 
-    print("\nABC 激进闭环验证完成。真实环境运行 main_dryrun.py 可直观看到『analyze → 结构化铁律强制多轮战役 → 目标改写』全过程。")
+    print("\nABC 激进闭环验证完成。真实环境运行 main_dryrun.py 可看到『analyze_people 强注目标 + 铁律强制连续 engage + 目标被改写』的核心循环。")
 
 if __name__ == "__main__":
     main()

@@ -49,8 +49,6 @@ async def main():
         "x_last_checked_id": None,
         "x_current_focus": {},
         "active_revisit_targets": [],
-        "current_revisit_campaign": None,
-        "revisit_campaign_history": [],
         "whitelist": settings.whitelist,
         "policies": settings.policies,
         "short_term_memory": [],

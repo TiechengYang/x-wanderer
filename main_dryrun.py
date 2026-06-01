@@ -77,6 +77,12 @@ GOAL_ADJUST:
                 'content': "【干运行阶段报告 - ABC 激进版】analyze_people → 目标重定向 → 连续 engage 战役 已成功打通。关系图谱洞见正在驱动决策。"
             })()
 
+        # 针对偏好定制互动的模拟回复（当 prompt 包含偏好/画像关键词时）
+        if "偏好" in prompt or "画像" in prompt or "relationship_position" in prompt_lower or "engagement_suggestions" in prompt_lower:
+            return type('obj', (object,), {
+                'content': "（干运行偏好定制回复）看到你这条内容，我想起你之前分享过对跨界思考的兴趣。这让我想到一个最近观察到的模式……（AI身份声明）你怎么看？"
+            })
+
         return type('obj', (object,), {
             'content': "（干运行模拟）AI 正在围绕目标进行数字漫游（透明身份声明）。"
         })
@@ -106,6 +112,12 @@ def print_dashboard(state: WandererState):
     else:
         print("\n回访队列: 空")
 
+    # 显示最近一次互动是否使用了偏好定制（新功能）
+    if state.get("last_decision") == "engage" and "偏好定制" in str(state.get("decision_reason", "")):
+        print("   ↳ 最近回复已根据目标画像+关系网+偏好个性化生成")
+
+
+
     # 重要画像
     try:
         mm = MemoryManager()
@@ -123,6 +135,7 @@ def print_dashboard(state: WandererState):
         if item.get("type") == "people_analysis":
             hp = item.get("high_priority_people", [])
             print(f"\n📊 最近人物分析: 高优先级={hp[:4]} | 子目标建议数={len(item.get('suggested_sub_goals', []))}")
+
             break
 
     # 最近反思
@@ -158,8 +171,6 @@ async def main():
         "x_last_checked_id": None,
         "x_current_focus": {},
         "active_revisit_targets": [],
-        "current_revisit_campaign": None,
-        "revisit_campaign_history": [],
         "whitelist": ["testuser1", "testuser2"],
         "policies": {"max_engage_per_hour": 99},
         "short_term_memory": [],

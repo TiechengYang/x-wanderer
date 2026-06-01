@@ -21,13 +21,10 @@ class WandererState(TypedDict):
     last_action_time: datetime
     total_actions: int
 
-    # ==================== X 平台上下文 + 主动回访支持（强化多轮战役版） ====================
+    # ==================== X 平台上下文 + 主动回访支持 ====================
     x_last_checked_id: Optional[str]
     x_current_focus: Dict[str, Any]
-    active_revisit_targets: List[str]
-    # 显式多轮回访战役状态（让 supervisor / engage 能可靠地维持连续行动）
-    current_revisit_campaign: Optional[Dict[str, Any]]   # {"target": str, "streak": int, "started_at": iso, "goal_context": str}
-    revisit_campaign_history: List[Dict[str, Any]]       # 已完成或中断的战役简史，用于反思和关系总结
+    active_revisit_targets: List[str]   # 分析后注入的高价值回访目标队列，驱动持续多轮 engage 战役
 
     # ==================== 白名单与策略 ====================
     whitelist: List[str]

@@ -54,6 +54,12 @@ def engage_node(state: WandererState, llm=None) -> dict:
     if "暂无" in profile_text:
         profile_text = "目前对该用户还没有积累太多长期印象。"
 
+    # 获取该目标最近的关系总结（更接地气的偏好信号）
+    recent_target_summaries = memory_manager.get_recent_relationship_summaries(target=target_author, limit=3)
+    relationship_context = ""
+    if recent_target_summaries:
+        relationship_context = "\n【与该目标最近的互动观察】\n" + "\n".join([f"- {s}" for s in recent_target_summaries])
+
     campaign_note = "【正在执行对该用户的多轮持续回访战役 - 已连续多轮】" if is_sustained_campaign else ""
 
     if llm:
@@ -67,10 +73,11 @@ def engage_node(state: WandererState, llm=None) -> dict:
 
 关于 @{target_author} 的长期印象：
 {profile_text}
+{relationship_context}
 
 {campaign_note}
 
-请生成一条**有深度、有延续性**的回复（适合引发对方继续回复），并自然带上你正在进行的数字漫游背景。
+请生成一条自然、有深度、能引发对方继续回复的回复。回复要体现你对这个人的了解，同时自然带上你正在进行的数字漫游背景。
 """
         try:
             response = llm.invoke(prompt)
@@ -92,9 +99,9 @@ def engage_node(state: WandererState, llm=None) -> dict:
         memory_manager.record_profile_revisit("person", target_author)
 
         # === 关键闭环：每次回访后立即写结构化关系总结 ===
-        # 这让下一次 analyze_people 能看到新鲜的一手观察，大幅加强分析-行动的耦合
+        # 这让下一次 analyze_people 能看到新鲜的一手观察
         if is_sustained_campaign:
-            summary = f"[{datetime.now().strftime('%m-%d %H:%M')}] 对 {target_author} 进行了多轮回访互动。回复内容围绕「{current_goal[:50]}」。印象更新：更了解其表达风格与兴趣方向。"
+            summary = f"[{datetime.now().strftime('%m-%d %H:%M')}] 对 {target_author} 进行了多轮回访互动。回复围绕「{current_goal[:40]}」。印象更新：更了解其表达风格与兴趣方向。"
             memory_manager.add_relationship_summary(target_author, summary)
             print(f"[Engage] 已为 {target_author} 写入关系总结（供下次全局分析使用）")
 

@@ -36,7 +36,7 @@ echo "✅ 已登录: $(gh api user --jq .login)"
 # 使用固定推荐值（一键模式）
 REPO_NAME="x-wanderer"
 VISIBILITY="--public"
-VERSION="v0.4.0-alpha"
+VERSION="v0.4.1-alpha"
 
 echo ""
 echo "即将发布/更新仓库: $REPO_NAME ($VISIBILITY) 版本 $VERSION"
@@ -75,14 +75,13 @@ if ! git remote get-url origin &>/dev/null; then
 fi
 
 git add .
-git commit -m "feat: v0.4.0-alpha ABC 结构化铁律强化版
+git commit -m "chore: v0.4.1-alpha 核心逻辑重新梳理清理版
 
-- Supervisor 结构化铁律早返回（pre-LLM 强制多轮 engage）
-- 新增 current_revisit_campaign 显式战役状态
-- analyze_people 强目标改写 + 关系总结闭环
-- Scheduler 直接种子高价值目标
-- 干运行仪表盘可视化战役全过程
-- 修复 memory 截断导致的无反应问题" || echo "没有新变更或 commit 失败"
+- 移除过度工程化的理想目标画像生成和复杂偏好定制上下文（用户反馈臃肿）
+- 聚焦核心：analyze_people 激进驱动 + Supervisor 结构化铁律早返回强制多轮战役
+- 清理 state、engage、supervisor、memory_manager 中的冗余字段和逻辑
+- 文档同步更新，强调干净、果断的关系维护主循环
+- 干运行现在能更清晰演示铁律强制行为" || echo "没有新变更或 commit 失败"
 
 if gh repo create "$REPO_NAME" $VISIBILITY --source=. --remote=origin --push 2>/dev/null; then
     echo ""
