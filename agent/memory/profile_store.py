@@ -24,10 +24,26 @@ class ProfileStore:
                 key_insights TEXT,
                 interaction_count INTEGER DEFAULT 0,
                 last_updated TEXT,
-                importance_score REAL DEFAULT 0.5
+                importance_score REAL DEFAULT 0.5,
+                last_revisit TEXT
+            )
+        """)
+        # 关系总结表（支持结构化图谱）
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS relationship_summaries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                target TEXT,
+                summary TEXT,
+                timestamp TEXT
             )
         """)
         self.conn.commit()
+        # 轻量迁移：确保 last_revisit 列存在
+        try:
+            self.conn.execute("ALTER TABLE profiles ADD COLUMN last_revisit TEXT")
+            self.conn.commit()
+        except:
+            pass
 
     def upsert_profile(self, profile_type: str, name: str, summary: str, 
                        key_insights: List[str], interaction_count: int = 1,
@@ -90,7 +106,8 @@ class ProfileStore:
         return [p for score, p in matched[:top_k]]
 
     def _row_to_dict(self, row):
-        return {
+        # 兼容不同列数（迁移后可能有 last_revisit）
+        d = {
             "id": row[0],
             "type": row[1],
             "name": row[2],
@@ -98,5 +115,37 @@ class ProfileStore:
             "key_insights": json.loads(row[4]) if row[4] else [],
             "interaction_count": row[5],
             "last_updated": row[6],
-            "importance_score": row[7]
+            "importance_score": row[7],
         }
+        d["last_revisit"] = row[8] if len(row) > 8 else None
+        return d
+
+    def record_revisit(self, profile_type: str, name: str):
+        """记录回访时间，用于 suggest_profiles_to_revisit 降权"""
+        profile_id = f"{profile_type}:{name}"
+        now = datetime.now().isoformat()
+        self.conn.execute(
+            "UPDATE profiles SET last_revisit = ? WHERE id = ?",
+            (now, profile_id)
+        )
+        self.conn.commit()
+
+    def add_relationship_summary(self, target: str, summary: str):
+        self.conn.execute(
+            "INSERT INTO relationship_summaries (target, summary, timestamp) VALUES (?, ?, ?)",
+            (target, summary, datetime.now().isoformat())
+        )
+        self.conn.commit()
+
+    def get_recent_relationship_summaries(self, target: str = None, limit: int = 8) -> List[str]:
+        if target:
+            rows = self.conn.execute(
+                "SELECT summary FROM relationship_summaries WHERE target = ? ORDER BY timestamp DESC LIMIT ?",
+                (target, limit)
+            ).fetchall()
+        else:
+            rows = self.conn.execute(
+                "SELECT summary FROM relationship_summaries ORDER BY timestamp DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+        return [r[0] for r in rows]
